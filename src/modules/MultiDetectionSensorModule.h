@@ -7,14 +7,26 @@
 // just a stock rebuild that happened to reuse the same base firmware version.
 #define FARM_BUILD_TAG "farm-shed-v3-generic"
 
-// This list is now IDENTICAL across every shed node's firmware (see gpios[]
-// in the .cpp) - every confirmed-safe GPIO on the board is always monitored,
-// under a generic name. What each "Sensor N" actually means for a given
-// node lives entirely in Node-RED's per-node config, not in firmware. This
-// means: no app configuration step at all, no per-shed rebuild, and adding
-// a new physical sensor to an existing shed is just wiring it to an already-
-// monitored pin and updating Node-RED - no reflash needed.
-#define NUM_GPIOS 12
+// This list is IDENTICAL across every shed of the SAME board type (see
+// gpios[] in the .cpp, which selects the right list per board automatically
+// via the same HELTEC_V3/HELTEC_V4 macros platformio.ini already defines -
+// no manual swapping between environments). What each "Sensor N" actually
+// means for a given node lives entirely in Node-RED's per-node config, not
+// in firmware. Adding a new physical sensor to an existing shed is just
+// wiring it to an already-monitored pin and updating Node-RED - no reflash.
+//
+// NUM_GPIOS differs by board since V3 and V4 have different reserved pins
+// (V4 has an onboard FEM chip and native USB, V3 has neither) - confirm the
+// exact macro name via `grep -rn "D HELTEC_V3" variants/` before trusting
+// this compiles the branch you expect.
+#if defined(HELTEC_V4)
+#define NUM_GPIOS 13
+#elif defined(HELTEC_V3)
+#define NUM_GPIOS 0 // TODO: set once V3's safe pin list is confirmed via the
+                    // same rigorous check we did for V4 - do not guess this
+#else
+#error "MultiDetectionSensorModule: unrecognized board - no confirmed-safe GPIO list exists for it yet"
+#endif
 
 // How long after boot the first full sync fires, before settling into the
 // normal STATE_REFRESH_SECS cadence (defined in the .cpp) for every sync

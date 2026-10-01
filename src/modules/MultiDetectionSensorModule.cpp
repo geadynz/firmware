@@ -48,6 +48,7 @@ MultiDetectionSensorModule *multiDetectionSensorModule;
 // PPS, reset, TX/RX) per variant.h. No GNSS module is physically present,
 // but re-verify each after setting `position.gps_mode NOT_PRESENT`, since
 // that's what stops firmware from still touching them in software.
+#if defined(HELTEC_V4)
 static const MultiDetectionGpioConfig gpios[] = {
     {4,  "Sensor 6",  true, true},
     {6,  "Sensor 7",  true, true},
@@ -63,6 +64,19 @@ static const MultiDetectionGpioConfig gpios[] = {
     {47, "Sensor 11", true, true},
     {48, "Sensor 12", true, true},
 };
+#elif defined(HELTEC_V3)
+// PLACEHOLDER - do not flash this as-is. NUM_GPIOS is deliberately set to 0
+// in the header until V3's safe pin list is confirmed the same rigorous way
+// V4's was: check variant.h/pins_arduino.h for LoRa/OLED/battery/Vext pins,
+// confirm there's no FEM chip code path to worry about (V3 has none per
+// platformio.ini - no HAS_LORA_FEM flag - but verify rather than assume),
+// and bench-test each candidate exactly like before. V3 is NOT guaranteed
+// to share V4's reserved pins - it's a different board (no FEM, external
+// USB-UART bridge instead of native USB) with its own constraints.
+static const MultiDetectionGpioConfig gpios[] = {
+    // {gpio, "Sensor N", usePullup, activeLow},
+};
+#endif
 
 static_assert(sizeof(gpios) / sizeof(gpios[0]) == NUM_GPIOS,
               "gpios[] length doesn't match NUM_GPIOS - update the #define in the header");
