@@ -10,5 +10,8 @@
   },
   "[powershell]": {
     "editor.defaultFormatter": "ms-vscode.powershell"
-  }
+  },
+  "idf.customExtraVars": {},
+  "idf.port": "/dev/ttyACM0",
+  "cmake.sourceDirectory": "/home/gready/esp/Meshtastic_MDS_V2/firmware/.dummy"
 }

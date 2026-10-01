@@ -125,6 +125,8 @@
 /**
  * Create module instances here.  If you are adding a new module, you must 'new' it here (or somewhere else)
  */
+#include "modules/MultiDetectionSensorModule.h"
+
 void setupModules()
 {
 #if (HAS_BUTTON || ARCH_PORTDUINO) && !MESHTASTIC_EXCLUDE_INPUTBROKER
@@ -212,6 +214,7 @@ void setupModules()
 #endif
     // Example: Put your module here
     // new ReplyModule();
+    multiDetectionSensorModule = new MultiDetectionSensorModule();
 #if HAS_SCREEN && !MESHTASTIC_EXCLUDE_CANNEDMESSAGES
     if (config.display.displaymode != meshtastic_Config_DisplayConfig_DisplayMode_COLOR) {
         cannedMessageModule = new CannedMessageModule();

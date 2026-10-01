@@ -141,10 +141,17 @@ void PositionModule::trySetRtc(meshtastic_Position p, bool isLocal, bool forceUp
         LOG_DEBUG("Ignore time from mesh: GPS/RTC/Phone/NTP time source in past day");
         return;
     }
+#ifndef FARM_ACCEPT_MANUAL_MESH_TIME
     if (!isLocal && p.location_source < meshtastic_Position_LocSource_LOC_INTERNAL) {
         LOG_DEBUG("Ignore time from mesh: unknown or manual source");
         return;
     }
+#else
+    // FARM_ACCEPT_MANUAL_MESH_TIME: our gateway uses a fixed/manual position
+    // with genuinely accurate NTP time. Deliberately accepting mesh time from
+    // a manual-source position is safe on our own closed, trusted mesh - do
+    // NOT do this on a node that will ever join the public Meshtastic network.
+#endif
     struct timeval tv;
     uint32_t secs = p.time;
 
