@@ -35,6 +35,7 @@ PositionModule::PositionModule()
     if (transmitHistory) {
         uint32_t restored = transmitHistory->getLastSentToMeshMillis(meshtastic_PortNum_POSITION_APP);
         if (restored != 0) {
+            // unset-sentinel-ok: the enclosing restored != 0 already rules out the unset value
             lastGpsSend = restored;
             LOG_INFO("Position: restored lastGpsSend from transmit history");
         }
@@ -83,6 +84,12 @@ bool PositionModule::handleReceivedProtobuf(const meshtastic_MeshPacket &mp, mes
 #endif
 
             nodeDB->setLocalPosition(p, true);
+            // Keep `precision` current for this channel even on this early-return path -
+            // alterReceivedProtobuf() runs right after handleReceived() on this same packet
+            // (MeshModule::callModules()) and depends on it to truncate correctly, whether this
+            // packet is our own already-truncated broadcast (re-truncating is a no-op) or a
+            // phone-submitted one that still needs it applied.
+            precision = getPositionPrecisionForChannel(mp.channel);
             return false;
         } else {
             LOG_TRACE("Incoming update from MYSELF");
@@ -557,7 +564,7 @@ int32_t PositionModule::runOnce()
     if (node == nullptr)
         return RUNONCE_INTERVAL;
 
-    uint32_t now = Time::getMillis();
+    uint32_t now = Time::stampMillis();
 
     // Local-only delivery, so it runs regardless of mesh opt-in state or channel utilization.
     // Only send while the queue is empty (phone assumed connected), like telemetry. The cadence
@@ -716,7 +723,7 @@ void PositionModule::trySmartBroadcast(const meshtastic_PositionLite &selfPos, u
     if (!sendOurPosition())
         return;
 
-    lastGpsSend = nowMs;
+    lastGpsSend = Time::skipZero(nowMs); // nowMs is a parameter, so guard at the store as well
     if (transmitHistory)
         transmitHistory->setLastSentToMesh(meshtastic_PortNum_POSITION_APP);
     LOG_DEBUG("Sent smart pos@%x:6 to mesh (distanceTraveled=%fm, minDistanceThreshold=%im, timeElapsed=%ims, "
@@ -736,7 +743,7 @@ void PositionModule::handleNewPosition()
         meshtastic_PositionLite selfPos;
         if (!nodeDB->copyNodePosition(node->num, selfPos))
             return;
-        trySmartBroadcast(selfPos, Time::getMillis());
+        trySmartBroadcast(selfPos, Time::stampMillis());
     }
 }
 
